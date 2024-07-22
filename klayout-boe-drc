@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<klayout-macro>
+ <description/>
+ <version/>
+ <category>drc</category>
+ <prolog/>
+ <epilog/>
+ <doc/>
+ <autorun>false</autorun>
+ <autorun-early>false</autorun-early>
+ <priority>0</priority>
+ <shortcut/>
+ <show-in-menu>true</show-in-menu>
+ <group-name>drc_scripts</group-name>
+ <menu-path>tools_menu.drc.end</menu-path>
+ <interpreter>dsl</interpreter>
+ <dsl-interpreter-name>drc-dsl-xml</dsl-interpreter-name>
+ <text>report("DRC")
+
+tiles(1.mm)
+threads(8)
+
+Si = input(1,0)          #Silicon Full
+SiEtch1 = input(2,0)     #Silicon Etch 1
+SiEtch2 = input(3,0)     #Silicon Etch 2
+
+BOE = input(5010,0)          #Buried Oxide Etch Mask
+TOE = input(5011,0)          #Top Oxide Etch Mask
+
+########################################################################################
+
+TOP_OXIDE_THICKNESS =    3.um
+BURIED_OXIDE_THICKNESS = 3.um
+TOP_OXIDE_ETCH_RATE =    250.nm #per min
+BURIED_OXIDE_ETCH_RATE = 100.nm #per min
+
+DELAMINATION_RATE =      600.nm #per min
+
+TOP_ETCH_TIME =          14 #mins
+BOTTOM_ETCH_TIME =       30 #mins
+
+N = 20
+r1 = 2.um
+r2 = 2.um
+n1 = 5
+n2 = 50
+
+TE = TOE.rounded_corners(r1, r1, n1).sized(TOP_OXIDE_ETCH_RATE * TOP_ETCH_TIME, square_limit).rounded_corners(r2, r2, n2)
+BE = BOE.not(Si+SiEtch1+SiEtch2).rounded_corners(r1, r1, n1)
+DL = (TE-BOE).not(Si+SiEtch1+SiEtch2).and(BOE.sized(DELAMINATION_RATE * BOTTOM_ETCH_TIME/N, square_limit))
+
+for i in 1..N
+  DL = (TE-BOE).not(Si+SiEtch1+SiEtch2).and(BE.sized(DELAMINATION_RATE * BOTTOM_ETCH_TIME/N, square_limit))
+  BE = (BE+DL).sized(BURIED_OXIDE_ETCH_RATE * BOTTOM_ETCH_TIME/N, square_limit).merged.rounded_corners(r2, 500.nm, n2).smoothed(5.nm)
+end
+
+TE.output("Top Oxide Etch","Estimated region where top oxide etching will occur")
+BE.output("Bottom Oxide Etch","Estimated region where bottom oxide etching will occur")</text>
+</klayout-macro>
