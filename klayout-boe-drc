@@ -24,9 +24,11 @@ Si = input(1,0)          #Silicon Full
 SiEtch1 = input(2,0)     #Silicon Etch 1
 SiEtch2 = input(3,0)     #Silicon Etch 2
 
-BOE = input(5010,0)          #Buried Oxide Etch Mask
-TOE = input(5011,0)          #Top Oxide Etch Mask
+BOE = input(5010,0)      #Buried Oxide Etch Mask
+TOE = input(5011,0)      #Top Oxide Etch Mask
 
+FP = input(4,0)          #Die area
+EXCL = input(1000,0)     #Exclude
 ########################################################################################
 
 TOP_OXIDE_THICKNESS =    3.um
@@ -53,6 +55,18 @@ for i in 1..N
   DL = (TE-BOE).not(Si+SiEtch1+SiEtch2).and(BE.sized(DELAMINATION_RATE * BOTTOM_ETCH_TIME/N, square_limit))
   BE = (BE+DL).sized(BURIED_OXIDE_ETCH_RATE * BOTTOM_ETCH_TIME/N, square_limit).merged.rounded_corners(r2, 500.nm, n2).smoothed(5.nm)
 end
+
+BOE.width(10.000, angle_limit(85)).polygons.not_inside(EXCL).output("Width", "Minimum width of BOE is 10um")
+BOE.space(10.000, angle_limit(85)).polygons.not_inside(EXCL).output("Spacing", "Minimum spacing of BOE is 10um")
+BOE.not(Si+SiEtch1+SiEtch2).width(500.nm, angle_limit(85)).polygons.not_inside(EXCL).output("Hole size", "Minimum Si hole size within BOE is 500nm for BHF penetration")
+BOE.separation(ModNpp+ModPdPpp, 1.um).polygons.not_inside(EXCL).output("Separation", "Minimum separation of BOE to P++ or N++ doped Si is 1um")
+
+TOE.width(10.000, angle_limit(85)).polygons.not_inside(EXCL).output("Width", "Minimum width of TOE is 10um")
+TOE.space(10.000, angle_limit(85)).polygons.not_inside(EXCL).output("Spacing", "Minimum spacing of TOE is 10um")
+TOE.enclosing(BOE, 15.um).polygons.not_inside(EXCL).output("Inclusion", "Minimum inclusion of BOE in TOE is 15um")
+TOE.separation((V1+M1+MH+V2+M2), 8.um).polygons.not_inside(EXCL).output("Separation", "Minimum separation of TOE to metal is 8um")
+
+FP.rounded_corners(2.5.mm, 2.5.mm, 300).enclosing(TOE+BOE, 450.um).polygons.not_inside(EXCL).output("Inclusion", "Minimum distance of BOE and TOE to edges is 450um and 1500um from corners")
 
 TE.output("Top Oxide Etch","Estimated region where top oxide etching will occur")
 BE.output("Bottom Oxide Etch","Estimated region where bottom oxide etching will occur")</text>
